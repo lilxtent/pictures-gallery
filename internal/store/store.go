@@ -7,6 +7,8 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -92,4 +94,16 @@ func now() string { return time.Now().UTC().Format(timeFormat) }
 func parseTime(s string) time.Time {
 	t, _ := time.Parse(timeFormat, s)
 	return t
+}
+
+// Backup writes a consistent snapshot of the database to dest, replacing it.
+func (s *Store) Backup(ctx context.Context, dest string) error {
+	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+		return err
+	}
+	if err := os.Remove(dest); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	_, err := s.db.ExecContext(ctx, "VACUUM INTO ?", dest)
+	return err
 }
