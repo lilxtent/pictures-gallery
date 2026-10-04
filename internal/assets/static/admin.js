@@ -15,6 +15,8 @@
     var current = box.querySelector('.photo-current');
     var recrop = box.querySelector('[data-recrop]');
     var cropper = null;
+    var cropperReady = false; // Cropper has loaded the photo and getData() is meaningful
+    var generation = 0; // bumped whenever a cropper is started or discarded, to ignore stale ready events
     var fromPick = false; // the cropper was started from a freshly picked file
 
     function field(name) { return form.querySelector('input[name="' + name + '"]'); }
@@ -36,6 +38,9 @@
 
     function start(src, initial, picked) {
       if (cropper) { cropper.destroy(); cropper = null; }
+      cropperReady = false;
+      field('crop_changed').value = ''; // set again by ready, once the new cropper has loaded
+      var gen = ++generation;
       fromPick = !!picked;
       stage.hidden = false;
       tools.hidden = false;
@@ -49,12 +54,18 @@
           checkOrientation: false, // the browser already applies EXIF orientation, like the server
           background: false,
           zoomable: false,
-          data: initial || undefined
+          data: initial || undefined,
+          // Only now does the form hold crop coordinates worth sending: saving
+          // while a large photo is still loading must not mark the crop as changed.
+          ready: function () {
+            if (gen !== generation) return;
+            cropperReady = true;
+            field('crop_changed').value = '1';
+            form.dispatchEvent(new Event('change'));
+          }
         });
       };
       img.src = src;
-      field('crop_changed').value = '1';
-      form.dispatchEvent(new Event('change'));
     }
 
     // Undoes a cropper started from a file pick that is no longer valid, so the
@@ -63,6 +74,8 @@
       if (!fromPick) return;
       fromPick = false;
       img.onload = null; // a still-loading image must not start a cropper later
+      generation++;
+      cropperReady = false;
       if (cropper) { cropper.destroy(); cropper = null; }
       stage.hidden = true;
       tools.hidden = true;
@@ -107,7 +120,7 @@
         showError('Выберите фото');
         return;
       }
-      if (!cropper) return;
+      if (!cropper || !cropperReady) return;
       var d = cropper.getData(true);
       field('crop_x').value = d.x;
       field('crop_y').value = d.y;
