@@ -1,5 +1,5 @@
 CREATE TABLE paintings (
-    id            INTEGER PRIMARY KEY,
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
     slug          TEXT    NOT NULL UNIQUE,
     title         TEXT    NOT NULL,
     technique     TEXT    NOT NULL DEFAULT '',

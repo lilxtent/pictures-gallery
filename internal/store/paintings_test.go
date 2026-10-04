@@ -187,6 +187,20 @@ func TestDelete(t *testing.T) {
 	}
 }
 
+func TestIDsAreNeverReusedAfterDelete(t *testing.T) {
+	s := openTest(t)
+	ctx := context.Background()
+	create(t, s, "A", true)
+	b := create(t, s, "B", true)
+	if err := s.DeletePainting(ctx, b.ID); err != nil {
+		t.Fatal(err)
+	}
+	c := create(t, s, "C", true)
+	if c.ID == b.ID {
+		t.Fatalf("id %d was reused after delete", c.ID)
+	}
+}
+
 func TestReopenKeepsDataAndMigrationsAreIdempotent(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "test.db")
 	s, err := Open(path)
