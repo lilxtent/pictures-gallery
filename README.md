@@ -63,9 +63,10 @@ Daily database snapshots are kept for 30 days; images are mirrored, and files
 deleted or replaced on the site are kept in `images-old/<date>`, where each dated
 directory is removed once its date is more than 30 days old.
 
-**Restore** (on the server, in `/srv/gallery`, with `BACKUP_TARGET` as in `deploy/.env`):
+**Restore** (on the server, in `/srv/gallery`). Use the same `BACKUP_TARGET` as in `deploy/.env`:
 
 ```bash
+export BACKUP_TARGET=backup:<bucket>/gallery
 docker compose -f deploy/docker-compose.yml stop app
 rm -f data/gallery.db-wal data/gallery.db-shm      # stale journal files must not outlive the old db
 rclone copyto "$BACKUP_TARGET/db/gallery-<date>.db" data/gallery.db
@@ -73,6 +74,27 @@ rclone sync "$BACKUP_TARGET/images" data/images
 chown -R 10001:10001 data
 docker compose -f deploy/docker-compose.yml start app
 ```
+
+This is enough after a disaster (lost server, restoring the latest snapshot). When you
+restore an **earlier day**, the mirror in `images` is already newer than the database:
+files that were deleted or replaced after the snapshot exist only in
+`images-old/<date>`, and without them those paintings show broken pictures. So, after
+`rclone sync` and before `chown`, copy back every `images-old` directory dated **after**
+the snapshot date (list them with `rclone lsf --dirs-only "$BACKUP_TARGET/images-old"`),
+**newest first**, so that the oldest one is copied last:
+
+```bash
+rclone copy "$BACKUP_TARGET/images-old/<newest date>" data/images
+# ...then each older date, ending with the first date after the snapshot
+rclone copy "$BACKUP_TARGET/images-old/<first date after snapshot>" data/images
+```
+
+`rclone copy` overwrites files that differ, so when a file changed several times the last
+copy wins. `images-old/<date>` holds the versions that were on the site before that
+night's backup, so the earliest directory after the snapshot has the version closest to
+the snapshot date, and it must be applied last. Do not copy the directory of the
+snapshot date itself. Directories older than 30 days are pruned, so an earlier day can
+only be restored within 30 days.
 
 ## Updating
 
