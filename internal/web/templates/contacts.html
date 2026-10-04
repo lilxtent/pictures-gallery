@@ -1,0 +1,12 @@
+{{define "content"}}
+<section class="page">
+  <h1>Контакты</h1>
+  {{with .Site.Contacts}}
+  <ul class="contacts">
+    {{range .}}<li><span class="label">{{.Label}}</span><a href="{{.Href}}">{{.Text}}</a></li>{{end}}
+  </ul>
+  {{else}}
+  <p class="empty">Контакты скоро появятся.</p>
+  {{end}}
+</section>
+{{end}}

@@ -73,6 +73,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /paintings/{slug}", s.painting)
 	mux.HandleFunc("GET /media/paintings/{id}/{file}", s.media)
 	mux.HandleFunc("GET /media/about/{file}", s.media)
+	mux.HandleFunc("GET /about", s.about)
+	mux.HandleFunc("GET /contacts", s.contacts)
+	mux.HandleFunc("GET /sitemap.xml", s.sitemap)
+	mux.HandleFunc("GET /robots.txt", s.robots)
 	mux.Handle("GET /static/", assets.Handler())
 	mux.HandleFunc("/", s.notFound)
 }
