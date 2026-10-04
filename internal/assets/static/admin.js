@@ -44,7 +44,7 @@
       img.onload = function () {
         img.onload = null;
         cropper = new Cropper(img, {
-          viewMode: 1,
+          viewMode: 2, // keeps the whole photo visible after rotating on small screens
           autoCropArea: 1,
           checkOrientation: false, // the browser already applies EXIF orientation, like the server
           background: false,
