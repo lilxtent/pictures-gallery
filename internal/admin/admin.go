@@ -102,6 +102,8 @@ func (a *Admin) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /admin/login", a.login)
 	mux.HandleFunc("POST /admin/logout", a.requireAuth(a.logout))
 	mux.HandleFunc("GET /admin/{$}", a.requireAuth(a.index))
+	mux.HandleFunc("GET /admin/paintings", a.requireAuth(a.list))
+	mux.HandleFunc("POST /admin/paintings/reorder", a.requireAuth(a.reorder))
 	mux.HandleFunc("/admin/", a.requireAuth(a.notFound))
 }
 
