@@ -74,6 +74,8 @@ func TestBackup(t *testing.T) {
 	if err := s.Backup(ctx, dest); err != nil {
 		t.Fatal(err)
 	}
+	// Add a second painting and verify the backup is replaced atomically.
+	create(t, s, "Роза", true)
 	// A second backup must overwrite the first.
 	if err := s.Backup(ctx, dest); err != nil {
 		t.Fatal(err)
@@ -83,8 +85,11 @@ func TestBackup(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer b.Close()
-	all, _ := b.ListPaintings(ctx, false)
-	if len(all) != 1 || all[0].Title != "Пион" {
+	all, err := b.ListPaintings(ctx, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(all) != 2 || all[0].Title != "Роза" || all[1].Title != "Пион" {
 		t.Fatalf("backup contents = %v", titles(all))
 	}
 }

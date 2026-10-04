@@ -101,9 +101,17 @@ func (s *Store) Backup(ctx context.Context, dest string) error {
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 		return err
 	}
-	if err := os.Remove(dest); err != nil && !errors.Is(err, os.ErrNotExist) {
+	tmp := dest + ".tmp"
+	// Remove any stale temp file.
+	if err := os.Remove(tmp); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	_, err := s.db.ExecContext(ctx, "VACUUM INTO ?", dest)
-	return err
+	// Create snapshot in temp file.
+	if _, err := s.db.ExecContext(ctx, "VACUUM INTO ?", tmp); err != nil {
+		// Clean up temp file on failure.
+		os.Remove(tmp)
+		return err
+	}
+	// Atomically replace dest with temp file.
+	return os.Rename(tmp, dest)
 }
