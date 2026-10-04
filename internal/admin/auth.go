@@ -150,7 +150,8 @@ func (a *Admin) login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	ip := clientIP(r, a.trustProxy)
 	now := a.now()
-	if !a.limiter.Allow(ip, now) {
+	// Attempt counts this try as a failure up front; Reset below undoes it on success.
+	if !a.limiter.Attempt(ip, now) {
 		a.render(w, r, http.StatusTooManyRequests, "login.html",
 			view{Title: "Вход", Data: loginData{"Слишком много попыток. Попробуйте через 15 минут."}})
 		return
@@ -161,7 +162,6 @@ func (a *Admin) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !ok {
-		a.limiter.Fail(ip, now)
 		a.render(w, r, http.StatusUnauthorized, "login.html", view{Title: "Вход", Data: loginData{"Неверный пароль"}})
 		return
 	}
@@ -242,18 +242,20 @@ func (l *limiter) recent(ip string, now time.Time) []time.Time {
 	return kept
 }
 
-// Allow reports whether another login attempt from ip is permitted.
-func (l *limiter) Allow(ip string, now time.Time) bool {
+// Attempt atomically checks whether another login attempt from ip is permitted
+// and, if so, reserves it by counting it as a failure in advance. A successful
+// login must call Reset to forget the reservation. Doing check and reserve
+// under one lock keeps parallel requests from all passing the check before any
+// of them is recorded.
+func (l *limiter) Attempt(ip string, now time.Time) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return len(l.recent(ip, now)) < l.max
-}
-
-// Fail records a failed attempt.
-func (l *limiter) Fail(ip string, now time.Time) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.fails[ip] = append(l.recent(ip, now), now)
+	recent := l.recent(ip, now)
+	if len(recent) >= l.max {
+		return false
+	}
+	l.fails[ip] = append(recent, now)
+	return true
 }
 
 // Reset forgets failures after a successful login.
