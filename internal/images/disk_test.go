@@ -116,3 +116,43 @@ func TestRemoveDir(t *testing.T) {
 		t.Fatal("dir should be removed")
 	}
 }
+
+func TestRemoveVariantsPreservesOtherVersions(t *testing.T) {
+	d := &Disk{Root: t.TempDir()}
+	variants2 := map[int][]byte{600: []byte("v2-600"), 1200: []byte("v2-1200")}
+	variants3 := map[int][]byte{600: []byte("v3-600"), 1200: []byte("v3-1200")}
+	if err := d.WriteVariants("paintings/1", 2, variants2); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.WriteVariants("paintings/1", 3, variants3); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.RemoveVariants("paintings/1", 2); err != nil {
+		t.Fatal(err)
+	}
+	p, _ := d.VariantFile("paintings/1", "v2-600.jpg")
+	if _, err := os.Stat(p); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("v2 variants should be removed")
+	}
+	p, _ = d.VariantFile("paintings/1", "v3-600.jpg")
+	if b, _ := os.ReadFile(p); string(b) != "v3-600" {
+		t.Fatal("v3 variants should be preserved")
+	}
+}
+
+func TestOriginalWithGlobMetacharactersInRoot(t *testing.T) {
+	tmpDir := t.TempDir()
+	rootWithMetachar := filepath.Join(tmpDir, "[test]")
+	if err := os.Mkdir(rootWithMetachar, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	d := &Disk{Root: rootWithMetachar}
+	jpg := testutil.JPEG(t, 10, 10, color.White)
+	if err := d.SaveOriginal("paintings/1", jpg); err != nil {
+		t.Fatal(err)
+	}
+	got, err := d.LoadOriginal("paintings/1")
+	if err != nil || !bytes.Equal(got, jpg) {
+		t.Fatalf("LoadOriginal with glob metacharacters in Root failed: %v", err)
+	}
+}

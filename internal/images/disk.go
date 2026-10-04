@@ -1,6 +1,7 @@
 package images
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -65,13 +66,22 @@ func (d *Disk) SaveOriginal(dir string, data []byte) error {
 	if err := os.WriteFile(tmp, data, 0o644); err != nil {
 		return err
 	}
-	old, _ := filepath.Glob(filepath.Join(p, "original.*"))
-	for _, f := range old {
-		if err := os.Remove(f); err != nil {
-			return err
+	newName := filepath.Join(p, "original"+ext)
+	if err := os.Rename(tmp, newName); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	entries, err := os.ReadDir(p)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if strings.HasPrefix(name, "original.") && name != "original"+ext {
+			os.Remove(filepath.Join(p, name))
 		}
 	}
-	return os.Rename(tmp, filepath.Join(p, "original"+ext))
+	return nil
 }
 
 // LoadOriginal returns the stored original or an error wrapping os.ErrNotExist.
@@ -80,11 +90,20 @@ func (d *Disk) LoadOriginal(dir string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	matches, _ := filepath.Glob(filepath.Join(p, "original.*"))
-	if len(matches) == 0 {
-		return nil, fmt.Errorf("images: no original in %s: %w", dir, os.ErrNotExist)
+	entries, err := os.ReadDir(p)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, fmt.Errorf("images: no original in %s: %w", dir, os.ErrNotExist)
+		}
+		return nil, err
 	}
-	return os.ReadFile(matches[0])
+	for _, entry := range entries {
+		name := entry.Name()
+		if strings.HasPrefix(name, "original.") {
+			return os.ReadFile(filepath.Join(p, name))
+		}
+	}
+	return nil, fmt.Errorf("images: no original in %s: %w", dir, os.ErrNotExist)
 }
 
 // WriteVariants writes v{version}-{size}.jpg for each variant.
@@ -111,10 +130,20 @@ func (d *Disk) RemoveVariants(dir string, version int) error {
 	if err != nil {
 		return err
 	}
-	matches, _ := filepath.Glob(filepath.Join(p, fmt.Sprintf("v%d-*.jpg", version)))
-	for _, f := range matches {
-		if err := os.Remove(f); err != nil {
-			return err
+	entries, err := os.ReadDir(p)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	prefix := fmt.Sprintf("v%d-", version)
+	for _, entry := range entries {
+		name := entry.Name()
+		if strings.HasPrefix(name, prefix) && strings.HasSuffix(name, ".jpg") {
+			if err := os.Remove(filepath.Join(p, name)); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
