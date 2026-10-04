@@ -1,3 +1,4 @@
 .superpowers/
 /data/
 .claude/worktrees/
+deploy/.env

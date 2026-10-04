@@ -1,0 +1,44 @@
+{{define "head"}}<link rel="stylesheet" href="/static/vendor/cropper.min.css">{{end}}
+
+{{define "content"}}
+{{$p := .Data.Painting}}
+<p><a href="/admin/paintings">← Все картины</a></p>
+<h1>{{if $p}}{{$p.Title}}{{else}}Новая картина{{end}}</h1>
+<form method="post" enctype="multipart/form-data" class="form" data-dirty-check
+      action="{{if $p}}/admin/paintings/{{$p.ID}}{{else}}/admin/paintings/new{{end}}">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  {{template "crop" .Data.Crop}}
+  <label>Название
+    <input type="text" name="title" value="{{.Data.Input.Title}}" required maxlength="200">
+    {{with .Data.Errors.title}}<span class="error">{{.}}</span>{{end}}
+  </label>
+  <label>Техника <small>например: Бумага, акварель</small>
+    <input type="text" name="technique" value="{{.Data.Input.Technique}}" maxlength="200">
+  </label>
+  <label>Размер <small>например: 30×40 см</small>
+    <input type="text" name="size" value="{{.Data.Input.Size}}" maxlength="100">
+  </label>
+  <label>Год <small>можно оставить пустым</small>
+    <input type="text" name="year" value="{{.Data.YearText}}" inputmode="numeric" maxlength="4">
+    {{with .Data.Errors.year}}<span class="error">{{.}}</span>{{end}}
+  </label>
+  <label>Описание <small>пустая строка начинает новый абзац</small>
+    <textarea name="description">{{.Data.Input.Description}}</textarea>
+  </label>
+  <label class="check"><input type="checkbox" name="visible"{{if .Data.Input.Visible}} checked{{end}}> Показывать на сайте</label>
+  <div class="actions">
+    <button class="primary">Сохранить</button>
+    {{if $p}}{{if $p.Visible}}<a href="/paintings/{{$p.Slug}}" target="_blank" rel="noopener">Посмотреть на сайте ↗</a>{{end}}{{end}}
+  </div>
+</form>
+{{if $p}}
+<div class="danger-zone">
+  <a class="button danger" href="/admin/paintings/{{$p.ID}}/delete">Удалить картину</a>
+</div>
+{{end}}
+{{end}}
+
+{{define "scripts"}}
+<script src="/static/vendor/cropper.min.js"></script>
+<script src="/static/admin.js"></script>
+{{end}}

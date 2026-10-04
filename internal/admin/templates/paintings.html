@@ -1,0 +1,26 @@
+{{define "content"}}
+<div class="page-head">
+  <h1>Картины</h1>
+  <a class="button primary" href="/admin/paintings/new">+ Добавить картину</a>
+</div>
+{{with .Data}}
+<p class="hint">Перетащите картину за значок ⠿, чтобы изменить порядок на сайте.</p>
+<ul class="list" data-sortable data-csrf="{{$.CSRF}}">
+  {{range .}}
+  <li data-id="{{.ID}}">
+    <span class="drag" aria-hidden="true">⠿</span>
+    <img src="{{imgURL (paintingDir .ID) .ImageVersion 600}}" alt="">
+    <a class="title" href="/admin/paintings/{{.ID}}">{{.Title}}{{if not .Visible}}<span class="badge">Скрыта</span>{{end}}</a>
+  </li>
+  {{end}}
+</ul>
+<p class="status" data-sort-status></p>
+{{else}}
+<p>Пока нет ни одной картины. Нажмите «Добавить картину».</p>
+{{end}}
+{{end}}
+
+{{define "scripts"}}
+<script src="/static/vendor/Sortable.min.js"></script>
+<script src="/static/admin.js"></script>
+{{end}}

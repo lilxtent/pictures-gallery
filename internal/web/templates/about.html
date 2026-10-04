@@ -1,0 +1,20 @@
+{{define "content"}}
+<section class="page about{{if not .Site.AboutPhoto}} text-only{{end}}">
+  {{with .Site.AboutPhoto}}
+  <div class="mat">
+    <img src="{{imgURL "about" .Version 1200}}" srcset="{{srcset "about" .Version}}"
+         sizes="(min-width: 900px) 450px, 95vw" width="{{.Width}}" height="{{.Height}}" alt="{{$.Site.ArtistName}}">
+  </div>
+  {{end}}
+  <div>
+    <h1>Об авторе</h1>
+    {{with .Site.AboutText}}
+    <div class="story">
+      {{range paragraphs .}}<p>{{range $i, $l := lines .}}{{if $i}}<br>{{end}}{{$l}}{{end}}</p>{{end}}
+    </div>
+    {{else}}
+    <p class="empty">Скоро здесь появится рассказ об авторе.</p>
+    {{end}}
+  </div>
+</section>
+{{end}}

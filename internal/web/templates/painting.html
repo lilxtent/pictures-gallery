@@ -1,0 +1,31 @@
+{{define "content"}}
+{{with .Data.Painting}}
+<a class="back" href="/">← Все работы</a>
+<article class="work">
+  <div class="image">
+    <a class="mat zoom" href="{{imgURL (paintingDir .ID) .ImageVersion 2000}}" data-lightbox data-alt="{{.Title}}">
+      <img src="{{imgURL (paintingDir .ID) .ImageVersion 1200}}"
+           srcset="{{srcset (paintingDir .ID) .ImageVersion}}"
+           sizes="(min-width: 900px) 600px, 95vw"
+           width="{{.ImageWidth}}" height="{{.ImageHeight}}" alt="{{.Title}}">
+    </a>
+    <p class="hint">нажмите, чтобы открыть во весь экран</p>
+  </div>
+  <div class="text">
+    <h1>{{.Title}}</h1>
+    {{with details .}}<p class="meta">{{.}}</p>{{end}}
+    {{with .Description}}
+    <div class="story">
+      {{range paragraphs .}}<p>{{range $i, $l := lines .}}{{if $i}}<br>{{end}}{{$l}}{{end}}</p>{{end}}
+    </div>
+    {{end}}
+    <nav class="pn">
+      {{with $.Data.Prev}}<a href="/paintings/{{.Slug}}">← {{.Title}}</a>{{else}}<span></span>{{end}}
+      {{with $.Data.Next}}<a href="/paintings/{{.Slug}}">{{.Title}} →</a>{{end}}
+    </nav>
+  </div>
+</article>
+{{end}}
+{{end}}
+
+{{define "scripts"}}<script src="/static/site.js" defer></script>{{end}}

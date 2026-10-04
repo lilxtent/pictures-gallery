@@ -1,0 +1,35 @@
+{{define "layout"}}<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{.Title}} · Управление сайтом</title>
+<link rel="stylesheet" href="/static/admin.css">
+{{block "head" .}}{{end}}
+</head>
+<body>
+{{if .CSRF}}
+<header class="bar">
+  <nav>
+    <a href="/admin/paintings"{{if eq .Nav "paintings"}} class="cur"{{end}}>Картины</a>
+    <a href="/admin/about"{{if eq .Nav "about"}} class="cur"{{end}}>Об авторе</a>
+    <a href="/admin/settings"{{if eq .Nav "settings"}} class="cur"{{end}}>Настройки</a>
+  </nav>
+  <div class="bar-right">
+    <a href="/" target="_blank" rel="noopener">Открыть сайт ↗</a>
+    <form method="post" action="/admin/logout">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <button class="link">Выйти</button>
+    </form>
+  </div>
+</header>
+{{end}}
+<main class="box">
+  {{with .Flash}}<p class="flash">{{.}}</p>{{end}}
+{{template "content" .}}
+</main>
+{{block "scripts" .}}{{end}}
+</body>
+</html>
+{{end}}

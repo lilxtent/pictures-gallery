@@ -1,0 +1,9 @@
+{{define "content"}}
+<h1>Удалить картину?</h1>
+<p>«{{.Data.Title}}» будет удалена с сайта вместе с фото. Это нельзя отменить.</p>
+<form method="post" action="/admin/paintings/{{.Data.ID}}/delete" class="actions">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <button class="danger">Да, удалить</button>
+  <a class="button" href="/admin/paintings/{{.Data.ID}}">Отмена</a>
+</form>
+{{end}}

@@ -1,0 +1,60 @@
+{{define "content"}}
+<h1>Настройки</h1>
+<form method="post" action="/admin/settings" class="form" data-dirty-check>
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <fieldset>
+    <legend>Шапка сайта</legend>
+    <label>Имя <small>как показывать на сайте</small>
+      <input type="text" name="artist_name" value="{{index .Data.Values "artist_name"}}" maxlength="100">
+    </label>
+    <label>Подпись под именем <small>например: художник, акварель</small>
+      <input type="text" name="subtitle" value="{{index .Data.Values "subtitle"}}" maxlength="100">
+    </label>
+    <label>Приветствие на главной странице <small>если оставить пустым, блок не показывается</small>
+      <textarea class="short" name="greeting">{{index .Data.Values "greeting"}}</textarea>
+    </label>
+  </fieldset>
+  <fieldset>
+    <legend>Контакты <small>пустые поля на сайте не показываются</small></legend>
+    <label>Телефон
+      <input type="tel" name="phone" value="{{index .Data.Values "phone"}}" maxlength="50">
+    </label>
+    <label>Почта
+      <input type="email" name="email" value="{{index .Data.Values "email"}}" maxlength="100">
+      {{with .Data.Errors.email}}<span class="error">{{.}}</span>{{end}}
+    </label>
+    <label>Telegram <small>имя пользователя, например @anna_art</small>
+      <input type="text" name="telegram" value="{{index .Data.Values "telegram"}}" maxlength="100">
+    </label>
+    <label>WhatsApp <small>номер телефона</small>
+      <input type="tel" name="whatsapp" value="{{index .Data.Values "whatsapp"}}" maxlength="50">
+    </label>
+    <label>ВКонтакте <small>ссылка на страницу или её адрес</small>
+      <input type="text" name="vk" value="{{index .Data.Values "vk"}}" maxlength="200">
+    </label>
+  </fieldset>
+  <div class="actions"><button class="primary">Сохранить</button></div>
+</form>
+
+<form method="post" action="/admin/password" class="form danger-zone">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <fieldset>
+    <legend>Сменить пароль</legend>
+    <label>Текущий пароль
+      <input type="password" name="current" autocomplete="current-password" required>
+      {{with .Data.PasswordErrors.current}}<span class="error">{{.}}</span>{{end}}
+    </label>
+    <label>Новый пароль <small>не короче 8 символов</small>
+      <input type="password" name="new" autocomplete="new-password" required minlength="8">
+      {{with .Data.PasswordErrors.new}}<span class="error">{{.}}</span>{{end}}
+    </label>
+    <label>Новый пароль ещё раз
+      <input type="password" name="repeat" autocomplete="new-password" required minlength="8">
+      {{with .Data.PasswordErrors.repeat}}<span class="error">{{.}}</span>{{end}}
+    </label>
+  </fieldset>
+  <div class="actions"><button>Сменить пароль</button></div>
+</form>
+{{end}}
+
+{{define "scripts"}}<script src="/static/admin.js"></script>{{end}}

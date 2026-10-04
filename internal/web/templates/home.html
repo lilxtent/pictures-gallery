@@ -1,0 +1,31 @@
+{{define "content"}}
+{{with .Site.Greeting}}
+<section class="intro">
+  {{with $.Site.AboutPhoto}}<img class="intro-photo" src="{{imgURL "about" .Version 600}}" alt="">{{end}}
+  <div>
+    {{range paragraphs .}}<p>{{range $i, $l := lines .}}{{if $i}}<br>{{end}}{{$l}}{{end}}</p>{{end}}
+    <p><a href="/about">Подробнее обо мне →</a></p>
+  </div>
+</section>
+{{end}}
+{{with .Data.Paintings}}
+<ul class="grid">
+  {{range .}}
+  <li class="card">
+    <a href="/paintings/{{.Slug}}">
+      <div class="mat">
+        <img src="{{imgURL (paintingDir .ID) .ImageVersion 600}}"
+             srcset="{{srcset (paintingDir .ID) .ImageVersion}}"
+             sizes="(min-width: 1000px) 340px, (min-width: 640px) 45vw, 90vw"
+             width="{{.ImageWidth}}" height="{{.ImageHeight}}" alt="{{.Title}}" loading="lazy">
+      </div>
+      <h2 class="t">{{.Title}}</h2>
+      {{with details .}}<p class="m">{{.}}</p>{{end}}
+    </a>
+  </li>
+  {{end}}
+</ul>
+{{else}}
+<p class="empty">Скоро здесь появятся работы.</p>
+{{end}}
+{{end}}

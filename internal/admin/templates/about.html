@@ -1,0 +1,21 @@
+{{define "head"}}<link rel="stylesheet" href="/static/vendor/cropper.min.css">{{end}}
+
+{{define "content"}}
+<h1>Об авторе</h1>
+<form method="post" action="/admin/about" enctype="multipart/form-data" class="form" data-dirty-check>
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  {{template "crop" .Data.Crop}}
+  <label>Рассказ об авторе <small>пустая строка начинает новый абзац</small>
+    <textarea name="about_text">{{.Data.Text}}</textarea>
+  </label>
+  <div class="actions">
+    <button class="primary">Сохранить</button>
+    <a href="/about" target="_blank" rel="noopener">Посмотреть на сайте ↗</a>
+  </div>
+</form>
+{{end}}
+
+{{define "scripts"}}
+<script src="/static/vendor/cropper.min.js"></script>
+<script src="/static/admin.js"></script>
+{{end}}
