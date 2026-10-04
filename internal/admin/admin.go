@@ -111,6 +111,12 @@ func (a *Admin) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/paintings/{id}/original", a.requireAuth(a.paintingOriginal))
 	mux.HandleFunc("GET /admin/paintings/{id}/delete", a.requireAuth(a.deleteConfirm))
 	mux.HandleFunc("POST /admin/paintings/{id}/delete", a.requireAuth(a.deletePainting))
+	mux.HandleFunc("GET /admin/about", a.requireAuth(a.aboutForm))
+	mux.HandleFunc("POST /admin/about", a.requireAuth(a.saveAbout))
+	mux.HandleFunc("GET /admin/about/original", a.requireAuth(a.aboutOriginal))
+	mux.HandleFunc("GET /admin/settings", a.requireAuth(a.settingsForm))
+	mux.HandleFunc("POST /admin/settings", a.requireAuth(a.saveSettings))
+	mux.HandleFunc("POST /admin/password", a.requireAuth(a.changePassword))
 	mux.HandleFunc("/admin/", a.requireAuth(a.notFound))
 }
 
