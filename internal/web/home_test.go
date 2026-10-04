@@ -49,10 +49,10 @@ func TestHomeHeaderGreetingAndFooter(t *testing.T) {
 	e := newEnv(t)
 	e.settings(map[string]string{
 		site.KeyArtistName: "Анна Иванова", site.KeySubtitle: "художник, акварель",
-		site.KeyGreeting: "Здравствуйте! Я пишу акварелью.", site.KeyPhone: "+7 900 000-00-00",
+		site.KeyGreeting: "Здравствуйте! Я пишу акварелью.\nСтрока один\nСтрока два", site.KeyPhone: "+7 900 000-00-00",
 	})
 	body := e.get("/").Body.String()
-	for _, want := range []string{"Анна Иванова", "художник, акварель", "Здравствуйте! Я пишу акварелью.",
+	for _, want := range []string{"Анна Иванова", "художник, акварель", "Здравствуйте! Я пишу акварелью.<br>Строка один<br>Строка два",
 		// html/template writes "+" in attributes as "&#43;", which browsers decode back.
 		"Подробнее обо мне", `href="tel:&#43;79000000000"`, `<html lang="ru">`, `<title>Анна Иванова — художник, акварель</title>`} {
 		if !strings.Contains(body, want) {

@@ -3,7 +3,7 @@
 <section class="intro">
   {{with $.Site.AboutPhoto}}<img class="intro-photo" src="{{imgURL "about" .Version 600}}" alt="">{{end}}
   <div>
-    {{range paragraphs .}}<p>{{.}}</p>{{end}}
+    {{range paragraphs .}}<p>{{range $i, $l := lines .}}{{if $i}}<br>{{end}}{{$l}}{{end}}</p>{{end}}
     <p><a href="/about">Подробнее обо мне →</a></p>
   </div>
 </section>
