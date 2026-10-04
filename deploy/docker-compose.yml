@@ -8,6 +8,7 @@ services:
     environment:
       DATA_DIR: /data
       TRUST_PROXY: "1"
+      TZ: Europe/Moscow
     volumes:
       - ../data:/data
 
