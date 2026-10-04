@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"image/color"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -49,6 +50,35 @@ func TestNewFormRenders(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Errorf("body should contain %q", want)
 		}
+	}
+}
+
+// The re-crop button must not carry the same data-crop attribute as the
+// fieldset, or admin.js would mistake it for a crop box.
+func TestCropPartialRecropAttribute(t *testing.T) {
+	h := newHarness(t)
+	a, err := New(Config{Gallery: h.g, Log: slog.New(slog.DiscardHandler)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	v := view{CSRF: "x", Data: formView{Crop: cropField{
+		CurrentURL: "/media/paintings/1/v1-600.jpg", OriginalURL: "/admin/paintings/1/original", CropJSON: `{"x":1}`,
+	}}}
+	if err := a.tpl["painting_form.html"].ExecuteTemplate(&buf, "layout", v); err != nil {
+		t.Fatal(err)
+	}
+	body := buf.String()
+	if n := strings.Count(body, "data-crop"); n != 1 { // only the fieldset
+		t.Errorf("data-crop occurrences = %d, want 1", n)
+	}
+	for _, want := range []string{`<fieldset class="photo" data-crop`, `data-initial-crop="{&#34;x&#34;:1}"`, "data-recrop"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("body should contain %q", want)
+		}
+	}
+	if strings.Contains(body, ` data-crop="`) {
+		t.Error("the re-crop button must not use data-crop")
 	}
 }
 

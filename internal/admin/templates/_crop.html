@@ -12,7 +12,7 @@
     <label class="button">{{if .CurrentURL}}Заменить фото{{else}}Выбрать фото{{end}}
       <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" hidden>
     </label>
-    {{with .OriginalURL}}<button type="button" data-recrop data-original="{{.}}" data-crop="{{$.CropJSON}}">Изменить кадрирование</button>{{end}}
+    {{with .OriginalURL}}<button type="button" data-recrop data-original="{{.}}" data-initial-crop="{{$.CropJSON}}">Изменить кадрирование</button>{{end}}
   </div>
   {{with .Error}}<p class="error">{{.}}</p>{{end}}
   <input type="hidden" name="crop_x">

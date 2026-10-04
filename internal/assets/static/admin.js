@@ -5,7 +5,7 @@
 
   // Photo cropping with Cropper.js. The browser only measures the crop; the
   // server cuts the stored original, so nothing is lost by cropping.
-  document.querySelectorAll('[data-crop]').forEach(function (box) {
+  document.querySelectorAll('fieldset[data-crop]').forEach(function (box) {
     var form = box.closest('form');
     var input = box.querySelector('input[type=file]');
     var stage = box.querySelector('.crop-stage');
@@ -17,6 +17,21 @@
     var cropper = null;
 
     function field(name) { return form.querySelector('input[name="' + name + '"]'); }
+
+    // Shows (or clears, with '') the photo error next to the field.
+    function showError(msg) {
+      var el = box.querySelector('.error');
+      if (!msg) {
+        if (el) el.remove();
+        return;
+      }
+      if (!el) {
+        el = document.createElement('p');
+        el.className = 'error';
+        box.insertBefore(el, box.querySelector('input[type=hidden]'));
+      }
+      el.textContent = msg;
+    }
 
     function start(src, initial) {
       if (cropper) { cropper.destroy(); cropper = null; }
@@ -44,16 +59,17 @@
       var file = input.files && input.files[0];
       if (!file) return;
       if (file.size > MAX_BYTES) {
-        alert('Фото слишком большое (максимум 30 МБ)');
+        showError('Фото слишком большое (максимум 30 МБ)');
         input.value = '';
         return;
       }
+      showError('');
       start(URL.createObjectURL(file));
     });
 
     if (recrop) {
       recrop.addEventListener('click', function () {
-        var initial = recrop.getAttribute('data-crop');
+        var initial = recrop.getAttribute('data-initial-crop');
         start(recrop.getAttribute('data-original'), initial ? JSON.parse(initial) : null);
       });
     }
@@ -67,7 +83,7 @@
     form.addEventListener('submit', function (e) {
       if (box.hasAttribute('data-required') && !(input.files && input.files.length)) {
         e.preventDefault();
-        alert('Выберите фото картины');
+        showError('Выберите фото');
         return;
       }
       if (!cropper) return;
