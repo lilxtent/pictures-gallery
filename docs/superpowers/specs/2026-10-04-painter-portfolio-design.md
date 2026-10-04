@@ -117,8 +117,9 @@ All admin pages except login require a valid session.
   message if neither exists).
 - On success: random 32-byte session token in a cookie (`HttpOnly`, `Secure` in
   production, `SameSite=Lax`, 30 days). Only the SHA-256 of the token is stored.
-- Rate limit: after 5 failed attempts from an IP within 15 minutes, further
-  attempts are refused for 15 minutes (in-memory counter).
+- Rate limit: at most 5 failed attempts per IP in a sliding 15-minute window;
+  further attempts are refused until the oldest failure ages out (in-memory).
+  Behind Caddy the client IP comes from `X-Forwarded-For` (`TRUST_PROXY=1`).
 - Logout deletes the session.
 
 ### «Картины» (main screen)
@@ -186,7 +187,8 @@ startup, tracked with `PRAGMA user_version`.
 
 Slugs: Russian → Latin transliteration (simple fixed table, e.g. «Жёлтая лилия» →
 `zheltaya-liliya`), lowercase, non-alphanumerics collapsed to `-`. On collision
-append `-2`, `-3`, …. Empty result falls back to `kartina-{id}`.
+append `-2`, `-3`, …. An empty result falls back to the base `kartina`
+(then `kartina-2`, …).
 
 ## Images
 
@@ -219,6 +221,7 @@ Configuration (env vars):
 - `BASE_URL`: absolute URL for Open Graph tags and sitemap, e.g. `https://example.ru`
 - `ADDR` (default `:8080`)
 - `DEV=1`: disables the `Secure` cookie flag, seeds sample content if the DB is empty
+- `TRUST_PROXY=1`: take the client IP from `X-Forwarded-For` (set in Docker Compose)
 
 Deployment:
 - Multi-stage Dockerfile → small runtime image with the single binary.
@@ -227,8 +230,8 @@ Deployment:
 - Russian VPS (e.g. Timeweb Cloud, ~300 ₽/month).
 - `deploy/deploy.sh`: ssh to the server, `git pull`, `docker compose up -d --build`.
 
-Backups: nightly cron on the host runs `deploy/backup.sh`: SQLite `VACUUM INTO` a
-snapshot, then `rclone sync` of the snapshot plus `data/images/` to an
+Backups: nightly cron on the host runs `deploy/backup.sh`: `gallery backup <file>`
+(a subcommand of the app binary that runs SQLite `VACUUM INTO`) writes a snapshot, then `rclone sync` of the snapshot plus `data/images/` to an
 S3-compatible bucket at the same provider; keeps 30 daily snapshots.
 
 Security summary:
@@ -260,5 +263,5 @@ Errors and logging:
 - GitHub Actions: `go vet` + `go test ./...` on every push.
 - Local development: `DEV=1 go run ./cmd/gallery` starts with the three sample
   watercolours (koi carp, yellow lily, peony) as seed content. The original photos
-  are committed under `seed/` and go through the normal upload pipeline with
+  are committed under `internal/seed/photos/` (embedded) and go through the normal upload pipeline with
   preset crop rectangles (removing the table edge, pen and camera stamp).
