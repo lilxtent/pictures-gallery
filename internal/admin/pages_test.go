@@ -126,6 +126,8 @@ func TestChangePasswordErrors(t *testing.T) {
 		{"wrong", "new password 1", "new password 1", "Неверный текущий пароль"},
 		{testPassword, "short", "short", "не короче 8 символов"},
 		{testPassword, "new password 1", "new password 2", "Пароли не совпадают"},
+		{testPassword, strings.Repeat("я", 40), strings.Repeat("я", 40), "слишком длинный"},
+		{testPassword, strings.Repeat("a", 73), strings.Repeat("a", 73), "слишком длинный"},
 	}
 	for _, tc := range cases {
 		rec := h.postForm("/admin/password", url.Values{"csrf": {csrf}, "current": {tc.current}, "new": {tc.newPw}, "repeat": {tc.repeat}}, c)

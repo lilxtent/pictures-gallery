@@ -149,6 +149,8 @@ func (a *Admin) changePassword(w http.ResponseWriter, r *http.Request) {
 		errs["current"] = "Неверный текущий пароль"
 	case utf8.RuneCountInString(newPw) < 8:
 		errs["new"] = "Новый пароль должен быть не короче 8 символов"
+	case len(newPw) > 72: // bcrypt rejects longer passwords
+		errs["new"] = "Новый пароль слишком длинный (не больше 72 латинских или 36 русских букв)"
 	case newPw != repeat:
 		errs["repeat"] = "Пароли не совпадают"
 	}
