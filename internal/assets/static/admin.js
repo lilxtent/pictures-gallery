@@ -15,6 +15,7 @@
     var current = box.querySelector('.photo-current');
     var recrop = box.querySelector('[data-recrop]');
     var cropper = null;
+    var fromPick = false; // the cropper was started from a freshly picked file
 
     function field(name) { return form.querySelector('input[name="' + name + '"]'); }
 
@@ -33,8 +34,9 @@
       el.textContent = msg;
     }
 
-    function start(src, initial) {
+    function start(src, initial, picked) {
       if (cropper) { cropper.destroy(); cropper = null; }
+      fromPick = !!picked;
       stage.hidden = false;
       tools.hidden = false;
       hint.hidden = false;
@@ -55,21 +57,40 @@
       form.dispatchEvent(new Event('change'));
     }
 
+    // Undoes a cropper started from a file pick that is no longer valid, so the
+    // form cannot submit crop coordinates measured on an image it does not send.
+    function resetPick() {
+      if (!fromPick) return;
+      fromPick = false;
+      img.onload = null; // a still-loading image must not start a cropper later
+      if (cropper) { cropper.destroy(); cropper = null; }
+      stage.hidden = true;
+      tools.hidden = true;
+      hint.hidden = true;
+      field('crop_changed').value = '';
+      if (current) current.hidden = false;
+    }
+
     input.addEventListener('change', function () {
       var file = input.files && input.files[0];
-      if (!file) return;
+      if (!file) {
+        resetPick();
+        return;
+      }
       if (file.size > MAX_BYTES) {
-        showError('Фото слишком большое (максимум 30 МБ)');
         input.value = '';
+        resetPick();
+        showError('Фото слишком большое (максимум 30 МБ)');
         return;
       }
       showError('');
-      start(URL.createObjectURL(file));
+      start(URL.createObjectURL(file), null, true);
     });
 
     if (recrop) {
       recrop.addEventListener('click', function () {
         var initial = recrop.getAttribute('data-initial-crop');
+        input.value = ''; // re-cropping the stored original: drop any picked file
         start(recrop.getAttribute('data-original'), initial ? JSON.parse(initial) : null);
       });
     }
