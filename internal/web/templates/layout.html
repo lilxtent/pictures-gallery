@@ -1,0 +1,43 @@
+{{define "layout"}}<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+{{with .Description}}<meta name="description" content="{{.}}">{{end}}
+<link rel="canonical" href="{{.CanonicalURL}}">
+<meta property="og:type" content="{{.OGType}}">
+<meta property="og:title" content="{{.Title}}">
+{{with .Description}}<meta property="og:description" content="{{.}}">{{end}}
+<meta property="og:url" content="{{.CanonicalURL}}">
+<meta property="og:locale" content="ru_RU">
+{{with .OGImage}}<meta property="og:image" content="{{.}}">
+<meta name="twitter:card" content="summary_large_image">{{end}}
+<link rel="stylesheet" href="/static/site.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="hdr">
+    <a class="brand" href="/">
+      <span class="name">{{.Site.ArtistName}}</span>
+      {{with .Site.Subtitle}}<span class="sub">{{.}}</span>{{end}}
+    </a>
+    <nav class="nav">
+      <a href="/"{{if eq .Nav "works"}} class="cur" aria-current="page"{{end}}>Работы</a>
+      <a href="/about"{{if eq .Nav "about"}} class="cur" aria-current="page"{{end}}>Об авторе</a>
+      <a href="/contacts"{{if eq .Nav "contacts"}} class="cur" aria-current="page"{{end}}>Контакты</a>
+    </nav>
+  </header>
+  <main>
+{{template "content" .}}
+  </main>
+  {{with .Site.Contacts}}
+  <footer class="foot">
+    {{range .}}<a href="{{.Href}}">{{.Text}}</a>{{end}}
+  </footer>
+  {{end}}
+</div>
+{{block "scripts" .}}{{end}}
+</body>
+</html>
+{{end}}
