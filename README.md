@@ -52,10 +52,19 @@ Environment variables: `ADDR` (`:8080`), `DATA_DIR` (`./data`), `BASE_URL`
    ```
 
 Daily database snapshots are kept for 30 days; images are mirrored, and files
-deleted or replaced on the site are kept in `images-old/<date>` for 30 days.
+deleted or replaced on the site are kept in `images-old/<date>`, where each dated
+directory is removed once its date is more than 30 days old.
 
-**Restore:** stop the app, copy a `gallery-<date>.db` to `data/gallery.db`, sync
-`images` back to `data/images`, `chown -R 10001:10001 data`, start the app.
+**Restore** (on the server, in `/srv/gallery`, with `BACKUP_TARGET` as in `deploy/.env`):
+
+```bash
+docker compose -f deploy/docker-compose.yml stop app
+rm -f data/gallery.db-wal data/gallery.db-shm      # stale journal files must not outlive the old db
+rclone copyto "$BACKUP_TARGET/db/gallery-<date>.db" data/gallery.db
+rclone sync "$BACKUP_TARGET/images" data/images
+chown -R 10001:10001 data
+docker compose -f deploy/docker-compose.yml start app
+```
 
 ## Updating
 
