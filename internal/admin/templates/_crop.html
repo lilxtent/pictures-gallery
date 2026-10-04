@@ -1,0 +1,25 @@
+{{define "crop"}}
+<fieldset class="photo" data-crop{{if .Required}} data-required{{end}}>
+  <legend>Фото</legend>
+  {{with .CurrentURL}}<div class="photo-current"><img src="{{.}}" alt=""></div>{{end}}
+  <div class="crop-stage" hidden><img alt=""></div>
+  <div class="crop-tools" hidden>
+    <button type="button" data-rotate="-90">↺ Повернуть влево</button>
+    <button type="button" data-rotate="90">↻ Повернуть вправо</button>
+  </div>
+  <p class="hint crop-hint" hidden>Передвиньте и растяните рамку так, чтобы в неё попала только картина.</p>
+  <div class="actions">
+    <label class="button">{{if .CurrentURL}}Заменить фото{{else}}Выбрать фото{{end}}
+      <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" hidden>
+    </label>
+    {{with .OriginalURL}}<button type="button" data-recrop data-original="{{.}}" data-crop="{{$.CropJSON}}">Изменить кадрирование</button>{{end}}
+  </div>
+  {{with .Error}}<p class="error">{{.}}</p>{{end}}
+  <input type="hidden" name="crop_x">
+  <input type="hidden" name="crop_y">
+  <input type="hidden" name="crop_w">
+  <input type="hidden" name="crop_h">
+  <input type="hidden" name="crop_rotate">
+  <input type="hidden" name="crop_changed">
+</fieldset>
+{{end}}
