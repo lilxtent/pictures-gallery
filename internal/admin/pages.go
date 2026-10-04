@@ -167,5 +167,15 @@ func (a *Admin) changePassword(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, r, err)
 		return
 	}
+	// Anyone else who was signed in with the old password is signed out; this
+	// browser keeps its session.
+	keep := ""
+	if c, err := r.Cookie(cookieName); err == nil {
+		keep = hashToken(c.Value)
+	}
+	if err := a.st.DeleteOtherSessions(ctx, keep); err != nil {
+		a.serverError(w, r, err)
+		return
+	}
 	http.Redirect(w, r, "/admin/settings?msg=password", http.StatusSeeOther)
 }

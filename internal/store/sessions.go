@@ -27,6 +27,12 @@ func (s *Store) DeleteSession(ctx context.Context, tokenHash string) error {
 	return err
 }
 
+// DeleteOtherSessions removes every session except the one with keepHash.
+func (s *Store) DeleteOtherSessions(ctx context.Context, keepHash string) error {
+	_, err := s.db.ExecContext(ctx, "DELETE FROM sessions WHERE token_hash <> ?", keepHash)
+	return err
+}
+
 // DeleteExpiredSessions removes sessions that expired before now.
 func (s *Store) DeleteExpiredSessions(ctx context.Context, now time.Time) error {
 	_, err := s.db.ExecContext(ctx, "DELETE FROM sessions WHERE expires_at <= ?", now.UTC().Format(timeFormat))

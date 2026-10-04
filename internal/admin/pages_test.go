@@ -117,6 +117,25 @@ func TestChangePassword(t *testing.T) {
 	}
 }
 
+func TestChangePasswordSignsOutOtherSessions(t *testing.T) {
+	h := newHarness(t)
+	a, csrf := h.login()
+	b, _ := h.login()
+	if rec := h.get("/admin/settings", b); rec.Code != http.StatusOK {
+		t.Fatalf("session B before change: status = %d", rec.Code)
+	}
+	rec := h.postForm("/admin/password", url.Values{"csrf": {csrf}, "current": {testPassword}, "new": {"new password 1"}, "repeat": {"new password 1"}}, a)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body)
+	}
+	if rec := h.get("/admin/settings", a); rec.Code != http.StatusOK {
+		t.Errorf("the session that changed the password must stay signed in, status = %d", rec.Code)
+	}
+	if rec := h.get("/admin/settings", b); rec.Code != http.StatusSeeOther || !strings.HasPrefix(location(rec), "/admin/login") {
+		t.Errorf("other session must be signed out, status = %d, location = %q", rec.Code, location(rec))
+	}
+}
+
 func TestChangePasswordErrors(t *testing.T) {
 	h := newHarness(t)
 	c, csrf := h.login()
