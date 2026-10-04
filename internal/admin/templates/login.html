@@ -1,0 +1,10 @@
+{{define "content"}}
+<h1>Вход</h1>
+<form method="post" action="/admin/login" class="form narrow">
+  {{with .Data.Error}}<p class="error">{{.}}</p>{{end}}
+  <label>Пароль
+    <input type="password" name="password" autocomplete="current-password" required autofocus>
+  </label>
+  <button class="primary">Войти</button>
+</form>
+{{end}}

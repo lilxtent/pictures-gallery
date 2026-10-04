@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/lilxtent/pictures-gallery/internal/admin"
 	"github.com/lilxtent/pictures-gallery/internal/gallery"
 	"github.com/lilxtent/pictures-gallery/internal/images"
 	"github.com/lilxtent/pictures-gallery/internal/seed"
@@ -106,8 +107,16 @@ func run(cfg config, log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	if err := admin.EnsurePassword(ctx, st, cfg.AdminPassword); err != nil {
+		return err
+	}
+	adm, err := admin.New(admin.Config{Gallery: g, Log: log, SecureCookies: !cfg.Dev, TrustProxy: cfg.TrustProxy})
+	if err != nil {
+		return err
+	}
 	mux := http.NewServeMux()
 	public.Register(mux)
+	adm.Register(mux)
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
