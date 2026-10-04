@@ -31,27 +31,43 @@ type config struct {
 	TrustProxy    bool
 }
 
-func env(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
+// loadConfig reads the configuration through getenv so tests can supply their
+// own environment. It does not validate; see config.validate.
+func loadConfig(getenv func(string) string) config {
+	env := func(key, def string) string {
+		if v := getenv(key); v != "" {
+			return v
+		}
+		return def
 	}
-	return def
-}
-
-func loadConfig() config {
+	dev := getenv("DEV") == "1"
+	baseURL := getenv("BASE_URL")
+	if baseURL == "" && dev {
+		baseURL = "http://localhost:8080"
+	}
 	return config{
 		Addr:          env("ADDR", ":8080"),
 		DataDir:       env("DATA_DIR", "./data"),
-		BaseURL:       strings.TrimRight(env("BASE_URL", "http://localhost:8080"), "/"),
-		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
-		Dev:           os.Getenv("DEV") == "1",
-		TrustProxy:    os.Getenv("TRUST_PROXY") == "1",
+		BaseURL:       strings.TrimRight(baseURL, "/"),
+		AdminPassword: getenv("ADMIN_PASSWORD"),
+		Dev:           dev,
+		TrustProxy:    getenv("TRUST_PROXY") == "1",
 	}
+}
+
+// validate rejects configurations that must not run the server: outside
+// development the public base URL (used in link previews and the sitemap)
+// has to be set explicitly rather than silently pointing at localhost.
+func (c config) validate() error {
+	if c.BaseURL == "" {
+		return errors.New("BASE_URL must be set in production, e.g. https://example.ru")
+	}
+	return nil
 }
 
 func main() {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	cfg := loadConfig()
+	cfg := loadConfig(os.Getenv)
 
 	if len(os.Args) > 1 && os.Args[1] == "backup" {
 		if len(os.Args) != 3 {
@@ -65,6 +81,10 @@ func main() {
 		return
 	}
 
+	if err := cfg.validate(); err != nil {
+		log.Error("invalid configuration", "err", err)
+		os.Exit(1)
+	}
 	if err := run(cfg, log); err != nil {
 		log.Error("fatal", "err", err)
 		os.Exit(1)

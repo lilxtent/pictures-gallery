@@ -18,7 +18,7 @@ DEV=1 ADMIN_PASSWORD=dev-password go run ./cmd/gallery
 - Tests: `go test ./...`
 
 Environment variables: `ADDR` (`:8080`), `DATA_DIR` (`./data`), `BASE_URL`
-(`http://localhost:8080`), `ADMIN_PASSWORD` (first start only), `DEV=1`
+(required unless `DEV=1`, which defaults it to `http://localhost:8080`), `ADMIN_PASSWORD` (first start only), `DEV=1`
 (no Secure cookie, sample content), `TRUST_PROXY=1` (client IP from `X-Forwarded-For`).
 
 ## Production server (one-time setup)
