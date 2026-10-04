@@ -175,6 +175,26 @@ func TestProcessRejectsGarbage(t *testing.T) {
 	}
 }
 
+func TestProcessRejectsTooManyPixels(t *testing.T) {
+	// 20000x20000 = 400 MP, declared in the header only.
+	_, err := Process(testutil.PNGHeaderOnly(20000, 20000), Crop{})
+	if !errors.Is(err, ErrTooManyPixels) {
+		t.Fatalf("err = %v, want ErrTooManyPixels", err)
+	}
+	if errors.Is(err, ErrDecode) {
+		t.Fatalf("too many pixels must be distinguishable from ErrDecode: %v", err)
+	}
+}
+
+func TestProcessAcceptsTheMegapixelLimit(t *testing.T) {
+	// Exactly at the limit passes the check; the header has no pixel data so
+	// decoding then fails with ErrDecode, not ErrTooManyPixels.
+	_, err := Process(testutil.PNGHeaderOnly(12000, 10000), Crop{})
+	if errors.Is(err, ErrTooManyPixels) || !errors.Is(err, ErrDecode) {
+		t.Fatalf("err = %v, want ErrDecode", err)
+	}
+}
+
 func TestNormalizeRotation(t *testing.T) {
 	for in, want := range map[int]int{0: 0, 90: 90, 180: 180, 270: 270, 360: 0, -90: 270, 450: 90, 89: 90, -180: 180} {
 		if got := NormalizeRotation(in); got != want {

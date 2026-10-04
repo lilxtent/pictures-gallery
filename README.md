@@ -25,6 +25,14 @@ Environment variables: `ADDR` (`:8080`), `DATA_DIR` (`./data`), `BASE_URL`
 
 1. Rent a small VPS with Ubuntu 24.04 at a Russian provider (e.g. Timeweb Cloud) and
    register a `.ru` domain. Point the `@` and `www` A records to the server's IP.
+   Choose a VPS with at least 2 GB RAM: resizing a large phone photo takes several
+   hundred MB (photos over 120 megapixels are refused). On a 1 GB VPS add a swap file
+   instead:
+   ```bash
+   fallocate -l 2G /swapfile && chmod 600 /swapfile
+   mkswap /swapfile && swapon /swapfile
+   echo '/swapfile none swap sw 0 0' >> /etc/fstab   # keep it after a reboot
+   ```
 2. On the server:
    ```bash
    apt update && apt install -y docker.io docker-compose-v2 git rclone

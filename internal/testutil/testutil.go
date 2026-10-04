@@ -4,6 +4,7 @@ package testutil
 import (
 	"bytes"
 	"encoding/binary"
+	"hash/crc32"
 	"image"
 	"image/color"
 	"image/draw"
@@ -39,6 +40,23 @@ func PNG(t testing.TB, w, h int, c color.Color) []byte {
 	if err := png.Encode(&buf, solid(w, h, c)); err != nil {
 		t.Fatal(err)
 	}
+	return buf.Bytes()
+}
+
+// PNGHeaderOnly returns just a PNG signature and an IHDR chunk declaring a
+// w×h 8-bit grayscale image. image.DecodeConfig accepts it and reports the
+// size, but there is no pixel data, so it is a cheap stand-in for a huge photo.
+func PNGHeaderOnly(w, h uint32) []byte {
+	ihdr := make([]byte, 13)
+	binary.BigEndian.PutUint32(ihdr[0:], w)
+	binary.BigEndian.PutUint32(ihdr[4:], h)
+	ihdr[8] = 8 // bit depth; colour type 0 (gray), the other bytes stay 0
+	var buf bytes.Buffer
+	buf.WriteString("\x89PNG\r\n\x1a\n")
+	binary.Write(&buf, binary.BigEndian, uint32(len(ihdr)))
+	chunk := append([]byte("IHDR"), ihdr...)
+	buf.Write(chunk)
+	binary.Write(&buf, binary.BigEndian, crc32.ChecksumIEEE(chunk))
 	return buf.Bytes()
 }
 

@@ -3,6 +3,7 @@ package admin
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"image/color"
 	"log/slog"
 	"mime/multipart"
@@ -141,6 +142,22 @@ func TestCreateRejectsUnreadablePhoto(t *testing.T) {
 	rec := h.do(multipartReq(t, "/admin/paintings/new", map[string]string{"csrf": csrf, "title": "Пион"}, []byte("not an image")), c)
 	if rec.Code != http.StatusUnprocessableEntity || !strings.Contains(rec.Body.String(), "Не удалось прочитать фото") {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body)
+	}
+}
+
+func TestCreateRejectsHugeResolutionPhoto(t *testing.T) {
+	h := newHarness(t)
+	c, csrf := h.login()
+	rec := h.do(multipartReq(t, "/admin/paintings/new", map[string]string{"csrf": csrf, "title": "Пион"}, testutil.PNGHeaderOnly(20000, 20000)), c)
+	if rec.Code != http.StatusUnprocessableEntity || !strings.Contains(rec.Body.String(), "слишком большое по разрешению") {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body)
+	}
+}
+
+func TestPhotoErrorMapsTooManyPixels(t *testing.T) {
+	err := fmt.Errorf("wrapped: %w", images.ErrTooManyPixels)
+	if got := photoError(err); got != msgPhotoTooManyPixels {
+		t.Fatalf("photoError = %q, want %q", got, msgPhotoTooManyPixels)
 	}
 }
 

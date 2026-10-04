@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	msgPhotoTooBig     = "Фото слишком большое (максимум 30 МБ)"
-	msgPhotoUnreadable = "Не удалось прочитать фото. Попробуйте другой файл"
-	msgPhotoMissing    = "Выберите фото"
-	msgPhotoAgain      = "После ошибки фото нужно выбрать ещё раз"
+	msgPhotoTooBig        = "Фото слишком большое (максимум 30 МБ)"
+	msgPhotoUnreadable    = "Не удалось прочитать фото. Попробуйте другой файл"
+	msgPhotoTooManyPixels = "Фото слишком большое по разрешению. Снимите в обычном режиме камеры или уменьшите фото"
+	msgPhotoMissing       = "Выберите фото"
+	msgPhotoAgain         = "После ошибки фото нужно выбрать ещё раз"
 )
 
 var errPhotoTooBig = errors.New("admin: photo too big")
@@ -88,6 +89,8 @@ func photoError(err error) string {
 	switch {
 	case errors.Is(err, errPhotoTooBig):
 		return msgPhotoTooBig
+	case errors.Is(err, images.ErrTooManyPixels):
+		return msgPhotoTooManyPixels
 	case errors.Is(err, images.ErrDecode):
 		return msgPhotoUnreadable
 	}
