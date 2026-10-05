@@ -12,13 +12,35 @@ import (
 	"github.com/lilxtent/pictures-gallery/internal/store"
 )
 
+// listItem is one row of the paintings list.
+type listItem struct {
+	store.Painting
+	Category string // "" when uncategorised
+}
+
 func (a *Admin) list(w http.ResponseWriter, r *http.Request) {
 	paintings, err := a.st.ListPaintings(r.Context(), false)
 	if err != nil {
 		a.serverError(w, r, err)
 		return
 	}
-	a.render(w, r, http.StatusOK, "paintings.html", view{Title: "Картины", Nav: "paintings", Data: paintings})
+	categories, err := a.st.ListCategories(r.Context())
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	names := make(map[int64]string, len(categories))
+	for _, c := range categories {
+		names[c.ID] = c.Name
+	}
+	items := make([]listItem, len(paintings))
+	for i, p := range paintings {
+		items[i].Painting = p
+		if p.CategoryID != nil {
+			items[i].Category = names[*p.CategoryID]
+		}
+	}
+	a.render(w, r, http.StatusOK, "paintings.html", view{Title: "Картины", Nav: "paintings", Data: items})
 }
 
 func (a *Admin) reorder(w http.ResponseWriter, r *http.Request) {
@@ -43,9 +65,21 @@ type formView struct {
 	YearText string
 	Errors   gallery.FieldErrors
 	Crop     cropField
+
+	Categories []store.Category // choices for the category select
+	CategoryID int64            // currently chosen category, 0 for none
 }
 
 func (a *Admin) renderForm(w http.ResponseWriter, r *http.Request, status int, fv formView) {
+	categories, err := a.st.ListCategories(r.Context())
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	fv.Categories = categories
+	if fv.Input.CategoryID != nil {
+		fv.CategoryID = *fv.Input.CategoryID
+	}
 	title := "Новая картина"
 	if fv.Painting != nil {
 		title = fv.Painting.Title
@@ -62,6 +96,7 @@ func (a *Admin) newForm(w http.ResponseWriter, r *http.Request) {
 
 func (a *Admin) create(w http.ResponseWriter, r *http.Request) {
 	in, yearText, errs := parsePaintingForm(r)
+	a.checkCategory(r, in, errs)
 	merge(errs, in.Validate(a.now()))
 	data, err := readPhoto(r)
 	switch {
@@ -136,7 +171,7 @@ func (a *Admin) editForm(w http.ResponseWriter, r *http.Request) {
 		Painting: &p,
 		Input: gallery.PaintingInput{
 			Title: p.Title, Technique: p.Technique, Size: p.Size, Year: p.Year,
-			Description: p.Description, Visible: p.Visible,
+			Description: p.Description, Visible: p.Visible, CategoryID: p.CategoryID,
 		},
 		YearText: yearText,
 		Crop:     editCrop(p, ""),
@@ -149,6 +184,7 @@ func (a *Admin) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	in, yearText, errs := parsePaintingForm(r)
+	a.checkCategory(r, in, errs)
 	merge(errs, in.Validate(a.now()))
 	data, err := readPhoto(r)
 	if err != nil {
@@ -182,6 +218,23 @@ func (a *Admin) update(w http.ResponseWriter, r *http.Request) {
 	a.renderForm(w, r, http.StatusUnprocessableEntity, formView{
 		Painting: &p, Input: in, YearText: yearText, Errors: errs, Crop: editCrop(p, errs["photo"]),
 	})
+}
+
+// checkCategory records an error when the form names a category that does not
+// exist (for example one deleted in another tab while the form was open).
+func (a *Admin) checkCategory(r *http.Request, in gallery.PaintingInput, errs gallery.FieldErrors) {
+	if in.CategoryID == nil {
+		if r.PostFormValue("category") != "" {
+			errs["category"] = msgCategoryUnknown
+		}
+		return
+	}
+	if _, err := a.st.GetCategory(r.Context(), *in.CategoryID); err != nil {
+		if !errors.Is(err, store.ErrNotFound) {
+			a.log.Error("check category", "err", err)
+		}
+		errs["category"] = msgCategoryUnknown
+	}
 }
 
 func (a *Admin) paintingOriginal(w http.ResponseWriter, r *http.Request) {

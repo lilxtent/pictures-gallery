@@ -11,6 +11,7 @@ import (
 type paintingData struct {
 	Painting   store.Painting
 	Prev, Next *store.Painting
+	Scope      *store.Category // set when the visitor came from this category's page
 }
 
 func (s *Server) painting(w http.ResponseWriter, r *http.Request) {
@@ -29,12 +30,24 @@ func (s *Server) painting(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
-	all, err := s.store.ListPaintings(ctx, true)
+	data := paintingData{Painting: p}
+	// ?category=<slug> narrows prev/next to that category, but only if the
+	// painting really belongs to it; anything else falls back to all works.
+	if sl := r.URL.Query().Get("category"); sl != "" && p.CategoryID != nil {
+		if c, err := s.store.GetCategoryBySlug(ctx, sl); err == nil && c.ID == *p.CategoryID {
+			data.Scope = &c
+		}
+	}
+	var all []store.Painting
+	if data.Scope != nil {
+		all, err = s.store.ListVisiblePaintingsInCategory(ctx, data.Scope.ID)
+	} else {
+		all, err = s.store.ListPaintings(ctx, true)
+	}
 	if err != nil {
 		s.serverError(w, r, err)
 		return
 	}
-	data := paintingData{Painting: p}
 	for i := range all {
 		if all[i].ID != p.ID {
 			continue

@@ -153,7 +153,7 @@
           return Number(li.getAttribute('data-id'));
         });
         status.textContent = 'Сохраняю…';
-        fetch('/admin/paintings/reorder', {
+        fetch(list.getAttribute('data-url'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': list.getAttribute('data-csrf') },
           body: JSON.stringify({ ids: ids })

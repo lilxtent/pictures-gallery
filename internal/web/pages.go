@@ -56,9 +56,17 @@ func (s *Server) sitemap(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
+	categories, err := s.store.ListPublicCategories(r.Context())
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
 	set := sitemapSet{NS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
 	for _, path := range []string{"/", "/about", "/contacts"} {
 		set.URLs = append(set.URLs, sitemapURL{Loc: s.baseURL + path})
+	}
+	for _, c := range categories {
+		set.URLs = append(set.URLs, sitemapURL{Loc: s.baseURL + "/category/" + c.Slug})
 	}
 	for _, p := range paintings {
 		set.URLs = append(set.URLs, sitemapURL{Loc: s.baseURL + "/paintings/" + p.Slug, LastMod: p.UpdatedAt.Format("2006-01-02")})

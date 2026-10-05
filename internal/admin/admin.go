@@ -111,6 +111,12 @@ func (a *Admin) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/paintings/{id}/original", a.requireAuth(a.paintingOriginal))
 	mux.HandleFunc("GET /admin/paintings/{id}/delete", a.requireAuth(a.deleteConfirm))
 	mux.HandleFunc("POST /admin/paintings/{id}/delete", a.requireAuth(a.deletePainting))
+	mux.HandleFunc("GET /admin/categories", a.requireAuth(a.categories))
+	mux.HandleFunc("POST /admin/categories", a.requireAuth(a.createCategory))
+	mux.HandleFunc("POST /admin/categories/reorder", a.requireAuth(a.reorderCategories))
+	mux.HandleFunc("POST /admin/categories/{id}", a.requireAuth(a.renameCategory))
+	mux.HandleFunc("GET /admin/categories/{id}/delete", a.requireAuth(a.deleteCategoryConfirm))
+	mux.HandleFunc("POST /admin/categories/{id}/delete", a.requireAuth(a.deleteCategory))
 	mux.HandleFunc("GET /admin/about", a.requireAuth(a.aboutForm))
 	mux.HandleFunc("POST /admin/about", a.requireAuth(a.saveAbout))
 	mux.HandleFunc("GET /admin/about/original", a.requireAuth(a.aboutOriginal))
@@ -124,15 +130,17 @@ func (a *Admin) Register(mux *http.ServeMux) {
 type view struct {
 	Title string
 	CSRF  string // empty on pages shown to logged-out users; hides the menu
-	Nav   string // "paintings", "about", "settings"
+	Nav   string // "paintings", "categories", "about", "settings"
 	Flash string
 	Data  any
 }
 
 var flashes = map[string]string{
-	"saved":    "Сохранено",
-	"deleted":  "Картина удалена",
-	"password": "Пароль изменён",
+	"saved":   "Сохранено",
+	"deleted": "Картина удалена",
+
+	"category-deleted": "Категория удалена",
+	"password":         "Пароль изменён",
 }
 
 func noCache(w http.ResponseWriter) {

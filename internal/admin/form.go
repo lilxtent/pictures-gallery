@@ -18,6 +18,7 @@ const (
 	msgPhotoTooManyPixels = "Фото слишком большое по разрешению. Снимите в обычном режиме камеры или уменьшите фото"
 	msgPhotoMissing       = "Выберите фото"
 	msgPhotoAgain         = "После ошибки фото нужно выбрать ещё раз"
+	msgCategoryUnknown    = "Выберите категорию из списка"
 )
 
 var errPhotoTooBig = errors.New("admin: photo too big")
@@ -43,6 +44,13 @@ func parsePaintingForm(r *http.Request) (gallery.PaintingInput, string, gallery.
 			year = y
 		}
 	}
+	var categoryID *int64
+	if text := strings.TrimSpace(r.PostFormValue("category")); text != "" {
+		// A malformed id stays nil; checkCategory reports it from the raw value.
+		if id, err := strconv.ParseInt(text, 10, 64); err == nil {
+			categoryID = &id
+		}
+	}
 	in := gallery.PaintingInput{
 		Title:       r.PostFormValue("title"),
 		Technique:   r.PostFormValue("technique"),
@@ -50,6 +58,7 @@ func parsePaintingForm(r *http.Request) (gallery.PaintingInput, string, gallery.
 		Year:        year,
 		Description: r.PostFormValue("description"),
 		Visible:     r.PostFormValue("visible") == "on",
+		CategoryID:  categoryID,
 	}
 	return in, yearText, errs
 }

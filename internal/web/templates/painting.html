@@ -1,6 +1,6 @@
 {{define "content"}}
 {{with .Data.Painting}}
-<a class="back" href="/">← Все работы</a>
+{{with $.Data.Scope}}<a class="back" href="/category/{{.Slug}}">← {{.Name}}</a>{{else}}<a class="back" href="/">← Все работы</a>{{end}}
 <article class="work">
   <div class="image">
     <a class="mat zoom" href="{{imgURL (paintingDir .ID) .ImageVersion 2000}}" data-lightbox data-alt="{{.Title}}">
@@ -20,8 +20,8 @@
     </div>
     {{end}}
     <nav class="pn">
-      {{with $.Data.Prev}}<a href="/paintings/{{.Slug}}">← {{.Title}}</a>{{else}}<span></span>{{end}}
-      {{with $.Data.Next}}<a href="/paintings/{{.Slug}}">{{.Title}} →</a>{{end}}
+      {{with $.Data.Prev}}<a href="/paintings/{{.Slug}}{{with $.Data.Scope}}?category={{.Slug}}{{end}}">← {{.Title}}</a>{{else}}<span></span>{{end}}
+      {{with $.Data.Next}}<a href="/paintings/{{.Slug}}{{with $.Data.Scope}}?category={{.Slug}}{{end}}">{{.Title}} →</a>{{end}}
     </nav>
   </div>
 </article>

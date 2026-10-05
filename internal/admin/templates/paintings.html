@@ -5,12 +5,12 @@
 </div>
 {{with .Data}}
 <p class="hint">Перетащите картину за значок ⠿, чтобы изменить порядок на сайте.</p>
-<ul class="list" data-sortable data-csrf="{{$.CSRF}}">
+<ul class="list" data-sortable data-url="/admin/paintings/reorder" data-csrf="{{$.CSRF}}">
   {{range .}}
   <li data-id="{{.ID}}">
     <span class="drag" aria-hidden="true">⠿</span>
     <img src="{{imgURL (paintingDir .ID) .ImageVersion 600}}" alt="">
-    <a class="title" href="/admin/paintings/{{.ID}}">{{.Title}}{{if not .Visible}}<span class="badge">Скрыта</span>{{end}}</a>
+    <a class="title" href="/admin/paintings/{{.ID}}">{{.Title}}{{if not .Visible}}<span class="badge">Скрыта</span>{{end}}{{with .Category}}<span class="badge">{{.}}</span>{{end}}</a>
   </li>
   {{end}}
 </ul>

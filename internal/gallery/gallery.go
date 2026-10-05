@@ -33,6 +33,7 @@ type PaintingInput struct {
 	Year        int // 0 = not specified
 	Description string
 	Visible     bool
+	CategoryID  *int64 // nil = uncategorised
 }
 
 // FieldErrors maps form field names to Russian error messages.
@@ -77,6 +78,7 @@ func apply(p *store.Painting, in PaintingInput) {
 	p.Year = in.Year
 	p.Description = in.Description
 	p.Visible = in.Visible
+	p.CategoryID = in.CategoryID
 }
 
 // AddPainting processes the photo, stores the painting at the top of the list
