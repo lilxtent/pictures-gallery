@@ -62,3 +62,18 @@ func (e *env) settings(kv map[string]string) {
 		e.t.Fatal(err)
 	}
 }
+
+func (e *env) category(name string) store.Category {
+	e.t.Helper()
+	c := store.Category{Name: name}
+	if err := e.st.CreateCategory(context.Background(), &c); err != nil {
+		e.t.Fatal(err)
+	}
+	return c
+}
+
+// addIn adds a painting that belongs to c.
+func (e *env) addIn(c store.Category, title string, visible bool) store.Painting {
+	e.t.Helper()
+	return e.add(gallery.PaintingInput{Title: title, Visible: visible, CategoryID: &c.ID})
+}

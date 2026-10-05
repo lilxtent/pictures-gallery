@@ -34,6 +34,10 @@ func TestRunSeedsOnceInOrder(t *testing.T) {
 	if all[2].ImageWidth != 1080 || all[2].ImageHeight != 1640 {
 		t.Errorf("peony should be cropped to 1080x1640, got %dx%d", all[2].ImageWidth, all[2].ImageHeight)
 	}
+	cats, _ := st.ListPublicCategories(ctx)
+	if len(cats) != 2 || cats[0].Name != "Цветы" || cats[0].Count != 2 || cats[1].Name != "Вода" || cats[1].Count != 1 {
+		t.Errorf("categories = %+v", cats)
+	}
 	info, _ := site.Load(ctx, st)
 	if info.ArtistName != "Имя Фамилия" {
 		t.Errorf("ArtistName = %q", info.ArtistName)

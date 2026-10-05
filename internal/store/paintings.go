@@ -21,7 +21,8 @@ type Painting struct {
 	Year        int // 0 means not specified
 	Description string
 	Visible     bool
-	Position    int // lower comes first on the site
+	Position    int    // lower comes first on the site
+	CategoryID  *int64 // nil means uncategorised
 
 	Crop         images.Crop
 	ImageVersion int
@@ -32,7 +33,7 @@ type Painting struct {
 	UpdatedAt time.Time
 }
 
-const paintingCols = `id, slug, title, technique, size, year, description, visible, position,
+const paintingCols = `id, slug, title, technique, size, year, description, visible, position, category_id,
 	crop_x, crop_y, crop_w, crop_h, rotation, image_version, image_width, image_height,
 	created_at, updated_at`
 
@@ -42,9 +43,10 @@ func scanPainting(row scanner) (Painting, error) {
 	var (
 		p                Painting
 		year             sql.NullInt64
+		category         sql.NullInt64
 		created, updated string
 	)
-	err := row.Scan(&p.ID, &p.Slug, &p.Title, &p.Technique, &p.Size, &year, &p.Description, &p.Visible, &p.Position,
+	err := row.Scan(&p.ID, &p.Slug, &p.Title, &p.Technique, &p.Size, &year, &p.Description, &p.Visible, &p.Position, &category,
 		&p.Crop.X, &p.Crop.Y, &p.Crop.W, &p.Crop.H, &p.Crop.Rotation, &p.ImageVersion, &p.ImageWidth, &p.ImageHeight,
 		&created, &updated)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -54,6 +56,9 @@ func scanPainting(row scanner) (Painting, error) {
 		return Painting{}, err
 	}
 	p.Year = int(year.Int64)
+	if category.Valid {
+		p.CategoryID = &category.Int64
+	}
 	p.CreatedAt, p.UpdatedAt = parseTime(created), parseTime(updated)
 	return p, nil
 }
@@ -78,7 +83,7 @@ func (s *Store) CreatePainting(ctx context.Context, p *Painting) error {
 	if base == "" {
 		base = "kartina"
 	}
-	sl, err := uniqueSlug(ctx, tx, base)
+	sl, err := uniqueSlug(ctx, tx, "paintings", base)
 	if err != nil {
 		return err
 	}
@@ -92,10 +97,10 @@ func (s *Store) CreatePainting(ctx context.Context, p *Painting) error {
 	}
 	ts := now()
 	res, err := tx.ExecContext(ctx, `INSERT INTO paintings
-		(slug, title, technique, size, year, description, visible, position,
+		(slug, title, technique, size, year, description, visible, position, category_id,
 		 crop_x, crop_y, crop_w, crop_h, rotation, image_version, image_width, image_height, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		sl, p.Title, p.Technique, p.Size, nullYear(p.Year), p.Description, p.Visible, pos,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		sl, p.Title, p.Technique, p.Size, nullYear(p.Year), p.Description, p.Visible, pos, p.CategoryID,
 		p.Crop.X, p.Crop.Y, p.Crop.W, p.Crop.H, p.Crop.Rotation, p.ImageVersion, p.ImageWidth, p.ImageHeight, ts, ts)
 	if err != nil {
 		return err
@@ -112,14 +117,16 @@ func (s *Store) CreatePainting(ctx context.Context, p *Painting) error {
 	return nil
 }
 
-func uniqueSlug(ctx context.Context, tx *sql.Tx, base string) (string, error) {
+// uniqueSlug returns base, or base-2, base-3, ... — the first slug not yet
+// used in table. table is always a package constant, never user input.
+func uniqueSlug(ctx context.Context, tx *sql.Tx, table, base string) (string, error) {
 	for i := 1; ; i++ {
 		cand := base
 		if i > 1 {
 			cand = fmt.Sprintf("%s-%d", base, i)
 		}
 		var exists bool
-		if err := tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM paintings WHERE slug = ?)", cand).Scan(&exists); err != nil {
+		if err := tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM "+table+" WHERE slug = ?)", cand).Scan(&exists); err != nil {
 			return "", err
 		}
 		if !exists {
@@ -132,11 +139,11 @@ func uniqueSlug(ctx context.Context, tx *sql.Tx, base string) (string, error) {
 func (s *Store) UpdatePainting(ctx context.Context, p *Painting) error {
 	ts := now()
 	res, err := s.db.ExecContext(ctx, `UPDATE paintings SET
-		title = ?, technique = ?, size = ?, year = ?, description = ?, visible = ?,
+		title = ?, technique = ?, size = ?, year = ?, description = ?, visible = ?, category_id = ?,
 		crop_x = ?, crop_y = ?, crop_w = ?, crop_h = ?, rotation = ?,
 		image_version = ?, image_width = ?, image_height = ?, updated_at = ?
 		WHERE id = ?`,
-		p.Title, p.Technique, p.Size, nullYear(p.Year), p.Description, p.Visible,
+		p.Title, p.Technique, p.Size, nullYear(p.Year), p.Description, p.Visible, p.CategoryID,
 		p.Crop.X, p.Crop.Y, p.Crop.W, p.Crop.H, p.Crop.Rotation,
 		p.ImageVersion, p.ImageWidth, p.ImageHeight, ts, p.ID)
 	if err != nil {
@@ -207,4 +214,24 @@ func (s *Store) DeletePainting(ctx context.Context, id int64) error {
 		return ErrNotFound
 	}
 	return nil
+}
+
+// ListVisiblePaintingsInCategory returns the visible paintings of one
+// category in site order.
+func (s *Store) ListVisiblePaintingsInCategory(ctx context.Context, categoryID int64) ([]Painting, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT "+paintingCols+
+		" FROM paintings WHERE visible = 1 AND category_id = ? ORDER BY position, id", categoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Painting
+	for rows.Next() {
+		p, err := scanPainting(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
 }

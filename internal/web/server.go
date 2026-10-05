@@ -70,6 +70,7 @@ func parseTemplates() (map[string]*template.Template, error) {
 // Register adds the public routes, /static/ and the catch-all 404 to mux.
 func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /{$}", s.home)
+	mux.HandleFunc("GET /category/{slug}", s.category)
 	mux.HandleFunc("GET /paintings/{slug}", s.painting)
 	mux.HandleFunc("GET /media/paintings/{id}/{file}", s.media)
 	mux.HandleFunc("GET /media/about/{file}", s.media)

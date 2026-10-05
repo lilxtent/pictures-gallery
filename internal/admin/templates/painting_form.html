@@ -25,6 +25,13 @@
   <label>Описание <small>пустая строка начинает новый абзац</small>
     <textarea name="description">{{.Data.Input.Description}}</textarea>
   </label>
+  <label>Категория <small>{{if .Data.Categories}}чтобы сгруппировать картины по темам{{else}}<a href="/admin/categories">создайте первую категорию</a>{{end}}</small>
+    <select name="category">
+      <option value="">Без категории</option>
+      {{range .Data.Categories}}<option value="{{.ID}}"{{if eq .ID $.Data.CategoryID}} selected{{end}}>{{.Name}}</option>{{end}}
+    </select>
+    {{with .Data.Errors.category}}<span class="error">{{.}}</span>{{end}}
+  </label>
   <label class="check"><input type="checkbox" name="visible"{{if .Data.Input.Visible}} checked{{end}}> Показывать на сайте</label>
   <div class="actions">
     <button class="primary">Сохранить</button>

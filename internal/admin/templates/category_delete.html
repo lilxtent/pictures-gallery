@@ -1,0 +1,9 @@
+{{define "content"}}
+<h1>Удалить категорию?</h1>
+<p>Категория «{{.Data.Name}}» будет удалена.{{if .Data.Count}} Картины из неё останутся на сайте, но без категории.{{end}}</p>
+<form method="post" action="/admin/categories/{{.Data.ID}}/delete" class="actions">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <button class="danger">Да, удалить</button>
+  <a class="button" href="/admin/categories">Отмена</a>
+</form>
+{{end}}

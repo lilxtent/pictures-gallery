@@ -1,5 +1,11 @@
 {{define "content"}}
-{{with .Site.Greeting}}
+{{with .Data.Categories}}
+<nav class="tabs" aria-label="Категории">
+  <a href="/"{{if not $.Data.Current}} aria-current="page"{{end}}>Все</a>
+  {{range .}}<a href="/category/{{.Slug}}"{{if and $.Data.Current (eq $.Data.Current.ID .ID)}} aria-current="page"{{end}}>{{.Name}}</a>{{end}}
+</nav>
+{{end}}
+{{if not .Data.Current}}{{with .Site.Greeting}}
 <section class="intro">
   {{with $.Site.AboutPhoto}}<img class="intro-photo" src="{{imgURL "about" .Version 600}}" alt="">{{end}}
   <div>
@@ -7,12 +13,12 @@
     <p><a href="/about">Подробнее обо мне →</a></p>
   </div>
 </section>
-{{end}}
+{{end}}{{end}}
 {{with .Data.Paintings}}
 <ul class="grid">
   {{range .}}
   <li class="card">
-    <a href="/paintings/{{.Slug}}">
+    <a href="/paintings/{{.Slug}}{{with $.Data.Current}}?category={{.Slug}}{{end}}">
       <div class="mat">
         <img src="{{imgURL (paintingDir .ID) .ImageVersion 600}}"
              srcset="{{srcset (paintingDir .ID) .ImageVersion}}"

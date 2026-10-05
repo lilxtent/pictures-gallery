@@ -24,7 +24,7 @@ paintings with long personal descriptions, an "about" block, contacts).
 - One photo per painting.
 - Hosted on a Russian VPS with a `.ru` domain (visitors mostly in Russia).
 
-Out of scope (YAGNI, can be added later): categories/series, comments, likes,
+Out of scope (YAGNI, can be added later): series, comments, likes,
 watermarks, multiple photos per painting, multilingual content, Yandex Metrica,
 automatic deploy on push.
 
@@ -168,10 +168,19 @@ paintings (
   description   TEXT NOT NULL DEFAULT '',
   visible       INTEGER NOT NULL DEFAULT 1,
   position      INTEGER NOT NULL,        -- lower = earlier on site
+  category_id   INTEGER REFERENCES categories(id) ON DELETE SET NULL,  -- NULL = uncategorised
   crop_x, crop_y, crop_w, crop_h INTEGER NOT NULL,
   rotation      INTEGER NOT NULL DEFAULT 0,  -- 0, 90, 180, 270
   image_version INTEGER NOT NULL DEFAULT 1,
   image_width, image_height INTEGER NOT NULL, -- of processed image, for layout
+  created_at, updated_at TEXT NOT NULL
+)
+
+categories (
+  id            INTEGER PRIMARY KEY,
+  slug          TEXT NOT NULL UNIQUE,   -- set on create, never changed
+  name          TEXT NOT NULL,
+  position      INTEGER NOT NULL,        -- lower = earlier in the tabs
   created_at, updated_at TEXT NOT NULL
 )
 
@@ -189,6 +198,20 @@ Slugs: Russian → Latin transliteration (simple fixed table, e.g. «Жёлта�
 `zheltaya-liliya`), lowercase, non-alphanumerics collapsed to `-`. On collision
 append `-2`, `-3`, …. An empty result falls back to the base `kartina`
 (then `kartina-2`, …).
+
+## Categories
+
+A painting belongs to at most one category (a theme such as «Пейзажи»). The
+admin manages them at `/admin/categories`: add, rename (the slug stays), delete
+(its paintings become uncategorised) and drag to reorder; the painting form has
+a category select.
+
+On the public site, when at least one category has a visible painting, the home
+page shows a row of tabs: «Все» and each such category in `position` order. Each
+category has its own page, `/category/{slug}`, listing its visible paintings
+(404 if it has none) and listed in the sitemap. Grid links on a category page
+carry `?category={slug}`, which scopes the painting page's prev/next and back
+link to that category (ignored if the painting is not in it).
 
 ## Images
 

@@ -184,3 +184,26 @@ func TestSetAboutPhotoRecropWithoutOriginalFails(t *testing.T) {
 		t.Fatalf("err = %v, want ErrNotExist", err)
 	}
 }
+
+func TestAddAndUpdatePaintingKeepCategory(t *testing.T) {
+	g := newGallery(t)
+	ctx := context.Background()
+	land := store.Category{Name: "Пейзажи"}
+	if err := g.Store.CreateCategory(ctx, &land); err != nil {
+		t.Fatal(err)
+	}
+	p, err := g.AddPainting(ctx, PaintingInput{Title: "Река", Visible: true, CategoryID: &land.ID}, photo(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.CategoryID == nil || *p.CategoryID != land.ID {
+		t.Fatalf("added painting category = %v, want %d", p.CategoryID, land.ID)
+	}
+	p, err = g.UpdatePainting(ctx, p.ID, PaintingInput{Title: "Река", Visible: true}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.CategoryID != nil {
+		t.Fatalf("category must be cleared by an update without one, got %d", *p.CategoryID)
+	}
+}

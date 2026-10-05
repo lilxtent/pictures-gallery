@@ -1,0 +1,36 @@
+{{define "content"}}
+<h1>Категории</h1>
+<p class="hint">Категории группируют картины по темам. На сайте над сеткой появятся ссылки на категории, в которых есть хотя бы одна показанная картина.</p>
+<form method="post" action="/admin/categories" class="actions add-category">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <input type="text" name="name" placeholder="Новая категория" value="{{if not .Data.ErrorID}}{{.Data.Draft}}{{end}}" maxlength="100" required aria-label="Название новой категории">
+  <button class="primary">Добавить</button>
+</form>
+{{if and .Data.Error (not .Data.ErrorID)}}<p class="error">{{.Data.Error}}</p>{{end}}
+{{with .Data.Categories}}
+<p class="hint">Перетащите категорию за значок ⠿, чтобы изменить порядок на сайте.</p>
+<ul class="list" data-sortable data-url="/admin/categories/reorder" data-csrf="{{$.CSRF}}">
+  {{range .}}
+  <li data-id="{{.ID}}">
+    <span class="drag" aria-hidden="true">⠿</span>
+    <form method="post" action="/admin/categories/{{.ID}}" class="rename">
+      <input type="hidden" name="csrf" value="{{$.CSRF}}">
+      <input type="text" name="name" value="{{if eq $.Data.ErrorID .ID}}{{$.Data.Draft}}{{else}}{{.Name}}{{end}}" maxlength="100" required aria-label="Название категории">
+      <button>Переименовать</button>
+    </form>
+    <span class="badge">Картин: {{.Count}}</span>
+    <a href="/admin/categories/{{.ID}}/delete">Удалить</a>
+  </li>
+  {{if eq $.Data.ErrorID .ID}}<li class="error-row"><p class="error">{{$.Data.Error}}</p></li>{{end}}
+  {{end}}
+</ul>
+<p class="status" data-sort-status></p>
+{{else}}
+<p>Пока нет ни одной категории.</p>
+{{end}}
+{{end}}
+
+{{define "scripts"}}
+<script src="/static/vendor/Sortable.min.js"></script>
+<script src="/static/admin.js"></script>
+{{end}}
